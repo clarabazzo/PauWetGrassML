@@ -22,29 +22,30 @@ Developing machine learning models (RF and PLS) for predicting species richness 
 
 ---
 
-### Data and Folder Structure:
+### Data and Folder Structure: ###
+    .
+    ├── BIomass_Samples_Shapefiles [field and plots shapefiles - zenodo]
+    │   └── <Shapefiles>
+    ├── Results [pre-processed data and ML results - zenodo]
+    │   └── ALLDATA [pre-processed input data for RF and PLS models]
+    │       └── MODELPERF [RF and PLS performance and variable importance]
+    │           └── RASTER [spatially-explicit predictions]    
+    │   ├── GLCM [pre-processed glcm]
+    │   └── VI [pre-processed vi]           
+    ├── TIF [input and scaled geotiff images - zenodo]
+    |   ├── rescaled
+    |   └── resampled
+    ├── jobs [ancillary bash and job files for cluster runs]
+    ├── lib [custom R functions]    
+    ├── <Rscript files>    
+    ├── date.csv [cutting dates - zenodo]
+    ├── merged_obs.csv [dem and nspecies data - zenodo]
+    ├── README.md
+    ├── LICENSE
+    └── ...
 
-BIomass_Samples_Shapefiles/:
-- shapefiles of plots contours in the field
-
-TIF/:
-- geotiff files of DEM/DTM, multispectral data, and intermediate geotif files with vi,glcm,dem features.
-
-dates.csv:
-- the corresponding dates for each biomass sample/shapefile/drone flight
-
-lib/:
-- custom R functions
-
-jobs/:
-- configuration files for cluster run
-
-Results/:
-- Final and intermediate results folder
-- Results/ALLDATA/: merged features 
-- Results/ALLDATA/MODELPERF/: cross-validation and feature importance results
-- Results/ALLDATA/MODELPERF/RASTER/: predicted spatially explicit maps of species richness
-
+Large and binary files that are not in this repository can be found in Zenodo.
+    
 ---
 
 ### Funding: 
@@ -52,5 +53,6 @@ Results/:
 - [DAKIS](https://adz-dakis.com/en/)
 
 ---
+
 
 
