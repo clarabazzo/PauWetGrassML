@@ -9,7 +9,7 @@ library(stringr)
 library(gridExtra)
 
 #--- wd
-wd = getwd()
+wd = paste0(getwd(),'/')
 
 #--- load custom libs
 invisible(sapply(list.files(path = paste0(wd,"lib/"),full.names = T),

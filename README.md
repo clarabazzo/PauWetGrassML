@@ -18,6 +18,8 @@ Developing machine learning models (RF and PLS) for predicting species richness 
    
 5. Make maps for spatially predicted species richness: make_raster_maps.R
 
+6. Post-processing and results' analysis: plot_VIP.R, anova_denovo.R
+
 ![workflow](https://github.com/user-attachments/assets/17cc5545-7058-4c9d-98db-fd8068fbf62a)
 
 ---

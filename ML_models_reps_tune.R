@@ -19,7 +19,7 @@ library(raster)
 library(tictoc)
 
 #--- wd [root of PauWetGrassML]
-wd = getwd()
+wd = paste0(getwd(),'/')
 
 glcm_properties = c("mean",
                "variance",
