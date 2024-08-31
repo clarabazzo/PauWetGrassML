@@ -46,7 +46,7 @@ Developing machine learning models (RF and PLS) for predicting species richness 
     ├── LICENSE
     └── ...
 
-Large and binary files that are not in this repository can be found in Zenodo.
+Large and binary files that are not in this repository can be found in Zenodo: https://doi.org/10.5281/zenodo.13621749
     
 ---
 
