@@ -50,11 +50,15 @@ Large and binary files that are not in this repository can be found in Zenodo: h
     
 ---
 
+### Publications:
+
+- Bazzo et al., (2024). Integration of UAV-Sensed Features Using Machine Learning Methods to Assess Species Richness in Wet Grassland Ecosystems. Ecological Informatics. https://doi.org/10.1016/j.ecoinf.2024.102813. Tag: [Bazzo_etal_ECOINF_2024](https://github.com/clarabazzo/PauWetGrassML/tree/Bazzo_etal_ECOINF_2024)
+
+---
+
 ### Funding: 
 
 - [DAKIS](https://adz-dakis.com/en/)
 
 ---
-
-
 
