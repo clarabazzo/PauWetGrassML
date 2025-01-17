@@ -92,10 +92,11 @@ spatialize  = T             # apply models to the whole field?
 seedn       = 1234          # seed number
 run_id      = 'alldata'     # id run
 lodg_opt    = 2             # 0 = no-lodging plots, 1 = only lodging plots, 2 = all data (including lodging)
-targ_var    = 'N_species'   # variable to adjust models
+targ_var    = 'biomass_obs' # variable to adjust models. options are: 'N_species', 'biomass_obs', 'height_obs'
 n_reps      = 5             # number of repetitions
 Treat       = 'all'         # treatment number
-tracktime   = T
+tracktime   = T             # track runtime
+write_simobs= T             # write simulated vs observed outputs for scatter plot [reviewer request]
 
 #--- hyperparameter tunning
 ntrees   = c(50,100,250,500)
@@ -110,6 +111,10 @@ dash_run    = read.csv(paste0(wd, dash_run_fn), as.is =T)
 #--- texture combinations
 texture_window_list = c('3x3', '5x5', '7x7', '15x15')
 texture_dir_list = c(0, 45, 90, 135)
+
+#texture_window_list = c('3x3')
+#texture_dir_list = c(0)
+
 
 #--- index variables
 key_vars    = c('id','Year','DOY','Treatment','Cut_Number')
@@ -192,7 +197,8 @@ for(tw in texture_window_list){
     }
     
     #--- run for each repetition
-    feature_perf_res = list() 
+    feature_perf_res = list()
+    if(write_simobs){simobs_all = list()} # store simobs pairs in a list
     
     #--- run for each feature combinations 
     for(pvar_comb in pred_var_combinations){
@@ -226,7 +232,7 @@ for(tw in texture_window_list){
       message(' Feat: ', pvar_comb_nm)
       message(' TexWS: ', tw)
       message(' TexDi: ', td)
-      
+       
       if(spatialize){
         
         if(tracktime){tic(msg='Reading rasters')}
@@ -279,6 +285,7 @@ for(tw in texture_window_list){
       if(use_seed){set.seed(seedn)}
       
       perf_ko = list()
+	  if(write_simobs){simobs_ko=list()}
       for(reps in 1:n_reps){
         
         #--- define outer k folds for this reps
@@ -314,6 +321,7 @@ for(tw in texture_window_list){
           if(tracktime){tic(msg='Tunning RF')}
           
           perf_res = list()
+		  simobs_rf_tune = list()
           for(i in 1:nrow(tuneGrid)){
             
             #message('Running RF for gridseach:', i, ' ko:',ko, ' rep:',reps)
@@ -333,19 +341,23 @@ for(tw in texture_window_list){
             perf_i$nodesize = tuneGrid$nodesize[i]
             
             mperf_i = list()
+			simobs_i = list()
             for(mtry_ki in unique(rf_model$pred$mtry)){
               for(ki in 1:inner_k){
-                mperf_ki = 
-                  mperf(sim = rf_model$pred$pred[rf_model$pred$Resample == paste0('Fold',ki)],
-                        obs = rf_model$pred$obs[rf_model$pred$Resample == paste0('Fold',ki)], vnam = ki, dchart = F)
+				df_ki = data.frame(sim = rf_model$pred$pred[rf_model$pred$Resample == paste0('Fold',ki)],
+				                   obs = rf_model$pred$obs[rf_model$pred$Resample == paste0('Fold',ki)],
+								   mtry = mtry_ki)
+                mperf_ki = mperf(sim = df_ki$sim, obs = df_ki$obs, vnam = ki, dchart = F)
                 mperf_ki$mtry = mtry_ki
                 if(!'a' %in% names(mperf_ki)){
                   mperf_ki$a = NA; mperf_ki$b = NA
                 }
                 mperf_i[[length(mperf_i)+1]] = mperf_ki
+				simobs_i[[length(simobs_i)+1]] = df_ki
               }
             }
             mperf_i = do.call(rbind, mperf_i)
+			simobs_i= do.call(rbind, simobs_i)
             
             #--- aggregate
             mperf_i_agg = 
@@ -366,12 +378,14 @@ for(tw in texture_window_list){
                   by='mtry')
             
             perf_res[[i]] = perf_i
+			simobs_rf_tune[[i]] = simobs_i
             
           }
           if(tracktime){toc()}
           
           #--- bind them all together
           perf_res_RF = do.call(rbind, perf_res)
+		  simobs_rf_tune = do.call(rbind, simobs_rf_tune)
           
           #--- order by best
           perf_res_RF = perf_res_RF[order(perf_res_RF$RMSE),]
@@ -380,6 +394,9 @@ for(tw in texture_window_list){
           perf_best_RF = perf_res_RF[1,]
           perf_best_RF$ncomp = NA
           perf_best_RF$Model = 'RF'
+		  
+		  simobs_rf = simobs_rf_tune[simobs_rf_tune$mtry == perf_best_RF$mtry[1],]
+		  simobs_rf$Model = 'RF'
           
           max_ncomp = length(pred_var)
           
@@ -460,18 +477,24 @@ for(tw in texture_window_list){
           
           #--- calculate other indexes too for best set
           mperf_f = list()
+          simobs_pls = list()
           for(ki in 1:inner_k){
-            mperf_ki = 
-              mperf(sim = pls_model$pred$pred[pls_model$pred$Resample == paste0('Fold',ki)],
-                    obs = pls_model$pred$obs[pls_model$pred$Resample == paste0('Fold',ki)], vnam = ki, dchart = F)
+		  
+            df_ki = data.frame(sim = pls_model$pred$pred[pls_model$pred$Resample == paste0('Fold',ki)],
+							   obs = pls_model$pred$obs[pls_model$pred$Resample == paste0('Fold',ki)],
+							   mtry= mtry_ki)
+
+            mperf_ki = mperf(sim = df_ki$sim, obs = df_ki$obs, vnam = ki, dchart = F)
             mperf_ki$mtry = mtry_ki
             if(!'a' %in% names(mperf_ki)){
               mperf_ki$a = NA; mperf_ki$b = NA
             }
             mperf_f[[length(mperf_f)+1]] = mperf_ki
+			simobs_pls[[length(simobs_pls)+1]] = df_ki
           }
           mperf_f = do.call(rbind, mperf_f)
-          
+		  simobs_pls= do.call(rbind, simobs_pls)
+		  
           #--- add other indexes to perf_pls
           perf_pls$mtry = NA
           perf_pls$r2 = mean(mperf_f$r2)
@@ -486,6 +509,8 @@ for(tw in texture_window_list){
           perf_pls$ntree = NA
           perf_pls$nodesize = NA
           perf_pls$Model = 'PLS'
+		  
+		  simobs_pls$Model = 'PLS'
           
           
           if(spatialize){
@@ -527,7 +552,12 @@ for(tw in texture_window_list){
           perf_best$outer_kfold = ko
           
           perf_ko[[length(perf_ko)+1]] = perf_best
-          
+		  if(write_simobs){
+			simobs_best = rbind(simobs_pls, simobs_rf)
+			simobs_best$repetition = reps
+			simobs_best$outer_kfold = ko
+			simobs_ko[[length(simobs_ko)+1]] = simobs_best
+		  }          
         }
       }
       perf_ko = do.call(rbind, perf_ko)
@@ -537,6 +567,15 @@ for(tw in texture_window_list){
       perf_ko$direction = td
       perf_ko$class_features = pvar_comb_nm
       perf_ko$total_features = length(pred_var)
+	  
+	  if(write_simobs){
+		simobs_ko = do.call(rbind, simobs_ko)
+		simobs_ko$window_size = tw
+		simobs_ko$direction = td
+		simobs_ko$class_features = pvar_comb_nm
+		simobs_ko$total_features = length(pred_var)
+		simobs_all[[length(simobs_all)+1]] = simobs_ko
+	  }
       
       #--- store
       feature_perf_res[[length(feature_perf_res)+1]] = perf_ko
@@ -550,7 +589,7 @@ for(tw in texture_window_list){
     feature_perf_res$Treatment = Treat
     feature_perf_res$targ_var = targ_var
     feature_perf_res$regression_model = feature_perf_res$Model
-    feature_perf_res$data_filter = data_filter_nm
+    feature_perf_res$data_filter = data_filter_nm   
     
     #feature_rank_res$Treatment = Treat
     
@@ -564,6 +603,16 @@ for(tw in texture_window_list){
     write.csv(data.frame(setting = c('use_seed','seedn','run_id','lodg_opt'),
                          value   = c(use_seed,seedn,run_id,lodg_opt)), 
               paste0(wd,'Results/ALLDATA/MODELPERF/SETTINGS_',tw,'_',td,'_',run_id,'_Treat',Treat,'_reps.csv'), row.names = F)
+	
+	if(write_simobs){
+		simobs_all = do.call(rbind, simobs_all)
+		simobs_all$Treatment = Treat
+		simobs_all$targ_var = targ_var
+		simobs_all$regression_model = simobs_all$Model
+		simobs_all$data_filter = data_filter_nm
+		write.csv(simobs_all, 
+              paste0(wd,'Results/ALLDATA/MODELPERF/SIMOBS_',tw,'_',td,'_',run_id,'_Treat',Treat,'_reps.csv'), row.names = F)
+	}
     
   }
 }
