@@ -344,9 +344,14 @@ for(tw in texture_window_list){
 			simobs_i = list()
             for(mtry_ki in unique(rf_model$pred$mtry)){
               for(ki in 1:inner_k){
-				df_ki = data.frame(sim = rf_model$pred$pred[rf_model$pred$Resample == paste0('Fold',ki)],
-				                   obs = rf_model$pred$obs[rf_model$pred$Resample == paste0('Fold',ki)],
-								   mtry = mtry_ki)
+			        ki_filter = rf_model$pred$Resample == paste0('Fold',ki)
+				df_ki = data.frame(sim = rf_model$pred$pred[ki_filter],
+				                   obs = rf_model$pred$obs[ki_filter],
+					           mtry = mtry_ki,
+                                                   id = datako[rf_model$pred$rowIndex,"id"][ki_filter],
+                                                   Year = datako[rf_model$pred$rowIndex,"Year"][ki_filter],
+                                                   DOY = datako[rf_model$pred$rowIndex,"DOY"][ki_filter],
+                                                   Treatment = datako[rf_model$pred$rowIndex,"Treatment"][ki_filter])
                 mperf_ki = mperf(sim = df_ki$sim, obs = df_ki$obs, vnam = ki, dchart = F)
                 mperf_ki$mtry = mtry_ki
                 if(!'a' %in% names(mperf_ki)){
@@ -480,10 +485,14 @@ for(tw in texture_window_list){
           simobs_pls = list()
           for(ki in 1:inner_k){
 		  
-            df_ki = data.frame(sim = pls_model$pred$pred[pls_model$pred$Resample == paste0('Fold',ki)],
-							   obs = pls_model$pred$obs[pls_model$pred$Resample == paste0('Fold',ki)],
-							   mtry= mtry_ki)
-
+            ki_filter = pls_model$pred$Resample == paste0('Fold',ki)            
+            df_ki = data.frame(sim = pls_model$pred$pred[ki_filter],
+			       obs = pls_model$pred$obs[ki_filter],
+			       mtry= mtry_ki,
+                               id = datako[pls_model$pred$rowIndex,"id"][ki_filter],
+                               Year = datako[pls_model$pred$rowIndex,"Year"][ki_filter],
+                               DOY = datako[pls_model$pred$rowIndex,"DOY"][ki_filter],
+                               Treatment = datako[pls_model$pred$rowIndex,"Treatment"][ki_filter])
             mperf_ki = mperf(sim = df_ki$sim, obs = df_ki$obs, vnam = ki, dchart = F)
             mperf_ki$mtry = mtry_ki
             if(!'a' %in% names(mperf_ki)){
